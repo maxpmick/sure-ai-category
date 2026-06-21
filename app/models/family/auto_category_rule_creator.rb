@@ -29,9 +29,13 @@ class Family::AutoCategoryRuleCreator
       categorization = categorizations_by_transaction_id[group.entries.first.transaction.id]
       category = categories_by_name[categorization&.category_name.to_s.downcase]
 
-      if category.present? && Rule.create_from_grouping(family, group.grouping_key, category, transaction_type: group.transaction_type)
+      if category.blank?
+        Rails.logger.info("Skipping AI rule creation for group #{group.grouping_key.inspect}: no matching category")
+        skipped_count += 1
+      elsif Rule.create_from_grouping(family, group.grouping_key, category, transaction_type: group.transaction_type)
         created_count += 1
       else
+        Rails.logger.info("Skipping AI rule creation for group #{group.grouping_key.inspect}: matching rule already exists or rule is invalid")
         skipped_count += 1
       end
     end

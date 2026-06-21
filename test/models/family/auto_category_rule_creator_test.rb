@@ -25,7 +25,12 @@ class Family::AutoCategoryRuleCreatorTest < ActiveSupport::TestCase
       AutoCategorization.new(transaction_id: group.entries.first.transaction.id, category_name: category_name)
     end
 
-    @llm_provider.expects(:auto_categorize).once.returns(provider_success_response(categorizations))
+    @llm_provider.expects(:auto_categorize).with do |transactions:, user_categories:, family:|
+      assert_equal @family, family
+      assert_equal groups.map { |group| group.entries.first.transaction.id }, transactions.map { |transaction| transaction[:id] }
+      assert_equal @family.categories.order(:id).pluck(:name).sort, user_categories.map { |category| category[:name] }.sort
+      true
+    end.once.returns(provider_success_response(categorizations))
 
     result = nil
 
@@ -62,6 +67,19 @@ class Family::AutoCategoryRuleCreatorTest < ActiveSupport::TestCase
       result = Family::AutoCategoryRuleCreator.new(@family, entries: @family.entries).create_rules
       assert_equal 0, result[:created_count]
       assert_equal 1, result[:skipped_count]
+    end
+  end
+
+  test "returns provider failures without creating rules" do
+    create_transaction(account: @account, name: "Netflix", amount: 15, date: Date.current)
+
+    @llm_provider.expects(:auto_categorize).once.returns(
+      provider_error_response(StandardError.new("Provider unavailable"))
+    )
+
+    assert_no_difference "@family.rules.count" do
+      result = Family::AutoCategoryRuleCreator.new(@family, entries: @family.entries).create_rules
+      assert_equal "Provider unavailable", result[:error]
     end
   end
 end

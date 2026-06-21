@@ -131,13 +131,8 @@ class Rule < ApplicationRecord
           rule_conditions: { condition_type: "transaction_name", operator: "like", value: grouping_key }
         )
         .distinct
-        .includes(:conditions, :actions)
+        .preload(:conditions, :actions)
         .any? do |rule|
-        next false unless rule.resource_type == "transaction"
-        next false unless rule.actions.one?
-        next false unless rule.actions.first.action_type == "set_transaction_category"
-        next false unless rule.actions.first.value.to_s == category.id.to_s
-
         matched_name_condition = false
         matched_type_condition = transaction_type.blank?
 

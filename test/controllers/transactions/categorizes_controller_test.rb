@@ -181,6 +181,21 @@ class Transactions::CategorizesControllerTest < ActionDispatch::IntegrationTest
     ), flash[:alert]
   end
 
+  test "auto_create_rules redirects with alert when AI rule creation fails" do
+    creator = mock("creator")
+    Family::AutoCategoryRuleCreator.expects(:new).with do |family, entries:|
+      assert_equal @family, family
+      assert_respond_to entries, :uncategorized_transactions
+      true
+    end.returns(creator)
+    creator.expects(:create_rules).returns({ created_count: 0, skipped_count: 0, error: "Provider unavailable" })
+
+    post auto_create_rules_transactions_categorize_url
+
+    assert_redirected_to transactions_url
+    assert_equal I18n.t("transactions.categorizes.auto_create_rules.failed", error: "Provider unavailable"), flash[:alert]
+  end
+
   private
 
     def sign_out
