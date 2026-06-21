@@ -118,6 +118,15 @@ class RuleTest < ActiveSupport::TestCase
     assert_equal @groceries_category, transaction_entry.transaction.category
   end
 
+  test "create_from_grouping returns nil when the matching rule already exists" do
+    Rule.create_from_grouping(@family, "Netflix", @groceries_category, transaction_type: "expense")
+
+    assert_no_difference "Rule.count" do
+      duplicate = Rule.create_from_grouping(@family, "Netflix", @groceries_category, transaction_type: "expense")
+      assert_nil duplicate
+    end
+  end
+
   # Artificial limitation put in place to prevent users from creating overly complex rules
   # Rules should be shallow and wide
   test "no nested compound conditions" do

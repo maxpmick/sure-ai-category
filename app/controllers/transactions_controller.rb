@@ -53,6 +53,7 @@ class TransactionsController < ApplicationController
     end
 
     @uncategorized_count = Current.accessible_entries.uncategorized_transactions.count
+    @auto_rule_creation_enabled = Provider::Registry.preferred_llm_provider.present?
 
     # Load projected recurring transactions for next 10 days
     @projected_recurring = Current.family.recurring_transactions

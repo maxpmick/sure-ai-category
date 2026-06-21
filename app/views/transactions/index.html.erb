@@ -13,6 +13,19 @@
           <% menu.with_item(variant: "link", text: t(".import"), href: new_import_path, icon: "download", data: { turbo_frame: "modal", class_name: "md:!hidden" }) %>
           <% if @uncategorized_count > 0 %>
             <% menu.with_item(variant: "link", text: t(".categorize_button", count: @uncategorized_count), href: transactions_categorize_path, icon: "tag", data: { turbo_frame: :_top }) %>
+            <% if @auto_rule_creation_enabled %>
+              <% menu.with_item(
+                variant: "link",
+                text: t(".auto_create_rules"),
+                href: auto_create_rules_transactions_categorize_path,
+                icon: "sparkles",
+                method: :post,
+                confirm: CustomConfirm.new(
+                  title: t(".auto_create_rules_confirm_title"),
+                  body: t(".auto_create_rules_confirm_body"),
+                  btn_text: t(".auto_create_rules_confirm_button")
+                )) %>
+            <% end %>
           <% end %>
         <% end %>
 

@@ -187,6 +187,10 @@ en:
       categorize_button:
         one: "Categorize (1)"
         other: "Categorize (%{count})"
+      auto_create_rules: "Create rules with AI"
+      auto_create_rules_confirm_title: "Create category rules with AI?"
+      auto_create_rules_confirm_body: "This will use your configured AI model to analyze uncategorized transaction groups and create categorization rules for the matching ones."
+      auto_create_rules_confirm_button: "Create rules"
     categorizes:
       show:
         exit: "Exit"
@@ -217,6 +221,15 @@ en:
           one: "1 transaction categorized"
           other: "%{count} transactions categorized"
         rule_creation_failed: "Transactions categorized, but the rule could not be created (it may already exist)."
+      auto_create_rules:
+        success:
+          one: "Created 1 categorization rule with AI."
+          other: "Created %{count} categorization rules with AI."
+        partial_success:
+          one: "Created 1 categorization rule with AI and skipped %{skipped_count} group."
+          other: "Created %{count} categorization rules with AI and skipped %{skipped_count} groups."
+        no_rules_created: "AI could not create any new categorization rules from your uncategorized transaction groups."
+        failed: "AI rule creation failed: %{error}"
       entry_row:
         include_checkbox: "Include %{name}"
         assign_category_select: "Assign category for %{name}"

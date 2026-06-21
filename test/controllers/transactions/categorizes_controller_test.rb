@@ -2,6 +2,7 @@ require "test_helper"
 
 class Transactions::CategorizesControllerTest < ActionDispatch::IntegrationTest
   include EntriesTestHelper
+  include ProviderTestHelper
 
   setup do
     sign_in @user = users(:family_admin)
@@ -141,6 +142,40 @@ class Transactions::CategorizesControllerTest < ActionDispatch::IntegrationTest
     sign_out
     get preview_rule_transactions_categorize_url(filter: "Amazon")
     assert_redirected_to new_session_url
+  end
+
+  test "auto_create_rules creates AI category rules for uncategorized groups" do
+    create_transaction(account: @account, name: "Netflix", amount: 15, date: 2.days.ago.to_date)
+    create_transaction(account: @account, name: "Netflix", amount: 20, date: 1.day.ago.to_date)
+    create_transaction(account: @account, name: "Payroll", amount: -2000, date: Date.current)
+
+    income_category = @family.categories.create!(name: "Salary", classification: "income")
+    llm_provider = mock("llm_provider")
+    Provider::Registry.stubs(:preferred_llm_provider).returns(llm_provider)
+
+    groups = Transaction::Grouper.strategy.call(@family.entries, limit: @family.entries.uncategorized_transactions.count)
+    categorizations = groups.map do |group|
+      category_name = group.grouping_key == "Payroll" ? income_category.name : @category.name
+      Provider::LlmConcept::AutoCategorization.new(transaction_id: group.entries.first.transaction.id, category_name: category_name)
+    end
+
+    llm_provider.expects(:auto_categorize).once.returns(provider_success_response(categorizations))
+
+    assert_difference "@family.rules.count", 2 do
+      post auto_create_rules_transactions_categorize_url
+    end
+
+    assert_redirected_to rules_url
+    assert_equal "Netflix", @family.rules.order(:created_at).first.name
+  end
+
+  test "auto_create_rules redirects with alert when no provider is configured" do
+    Provider::Registry.stubs(:preferred_llm_provider).returns(nil)
+
+    post auto_create_rules_transactions_categorize_url
+
+    assert_redirected_to transactions_url
+    assert_match "configured", flash[:alert]
   end
 
   private

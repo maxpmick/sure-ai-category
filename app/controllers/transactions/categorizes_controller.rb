@@ -117,6 +117,19 @@ class Transactions::CategorizesController < ApplicationController
     render turbo_stream: streams
   end
 
+  def auto_create_rules
+    result = Family::AutoCategoryRuleCreator.new(Current.family, entries: Current.accessible_entries).create_rules
+
+    if result[:error].present?
+      redirect_back_or_to transactions_path, alert: t(".failed", error: result[:error])
+    elsif result[:created_count].positive?
+      notice_key = result[:skipped_count].positive? ? ".partial_success" : ".success"
+      redirect_to rules_path, notice: t(notice_key, count: result[:created_count], skipped_count: result[:skipped_count])
+    else
+      redirect_back_or_to transactions_path, alert: t(".no_rules_created")
+    end
+  end
+
   private
 
     def uncategorized_count

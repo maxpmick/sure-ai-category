@@ -43,6 +43,8 @@ class Rule < ApplicationRecord
   # Creates a categorization rule for the Quick Categorize Wizard.
   # Returns the saved rule, or nil if a duplicate or invalid rule already exists.
   def self.create_from_grouping(family, grouping_key, category, transaction_type: nil)
+    return nil if grouping_rule_exists?(family, grouping_key, category, transaction_type: transaction_type)
+
     rule = family.rules.build(name: grouping_key, resource_type: "transaction", active: true)
     rule.conditions.build(condition_type: "transaction_name", operator: "like", value: grouping_key)
     rule.conditions.build(condition_type: "transaction_type", operator: "=", value: transaction_type) if transaction_type.present?
@@ -120,6 +122,32 @@ class Rule < ApplicationRecord
   end
 
   private
+    def self.grouping_rule_exists?(family, grouping_key, category, transaction_type: nil)
+      family.rules.includes(:conditions, :actions).any? do |rule|
+        next false unless rule.resource_type == "transaction"
+        next false unless rule.actions.one?
+        next false unless rule.actions.first.action_type == "set_transaction_category"
+        next false unless rule.actions.first.value.to_s == category.id.to_s
+
+        matched_name_condition = false
+        matched_type_condition = transaction_type.blank?
+
+        extra_conditions = rule.conditions.reject do |condition|
+          if condition.condition_type == "transaction_name" && condition.operator == "like" && condition.value == grouping_key
+            matched_name_condition = true
+            true
+          elsif transaction_type.present? && condition.condition_type == "transaction_type" && condition.operator == "=" && condition.value == transaction_type
+            matched_type_condition = true
+            true
+          else
+            false
+          end
+        end
+
+        matched_name_condition && matched_type_condition && extra_conditions.empty?
+      end
+    end
+
     def matching_resources_scope
       scope = registry.resource_scope
 
