@@ -230,6 +230,9 @@ en:
           other: "Created %{count} categorization rules with AI and skipped %{skipped_count} groups."
         no_rules_created: "AI could not create any new categorization rules from your uncategorized transaction groups."
         failed: "AI rule creation failed: %{error}"
+        errors:
+          no_provider: "No AI provider is configured for rule creation."
+          generic_failure: "The configured AI provider could not categorize your uncategorized transaction groups."
       entry_row:
         include_checkbox: "Include %{name}"
         assign_category_select: "Assign category for %{name}"

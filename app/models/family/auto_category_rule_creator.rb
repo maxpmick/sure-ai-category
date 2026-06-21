@@ -5,7 +5,7 @@ class Family::AutoCategoryRuleCreator
   end
 
   def create_rules
-    return failure("No AI provider is configured for rule creation") unless llm_provider
+    return failure(I18n.t("transactions.categorizes.auto_create_rules.errors.no_provider")) unless llm_provider
 
     grouped_entries = uncategorized_groups
     return success if grouped_entries.empty?
@@ -16,16 +16,18 @@ class Family::AutoCategoryRuleCreator
       family: family
     )
 
-    return failure(result.error&.message || "The configured AI provider could not categorize your uncategorized transaction groups") unless result.success?
+    return failure(
+      result.error&.message || I18n.t("transactions.categorizes.auto_create_rules.errors.generic_failure")
+    ) unless result.success?
 
-    categories_by_name = family.categories.index_by(&:name)
+    categories_by_name = family.categories.index_by { |category| category.name.downcase }
     categorizations_by_transaction_id = result.data.index_by(&:transaction_id)
     created_count = 0
     skipped_count = 0
 
     grouped_entries.each do |group|
       categorization = categorizations_by_transaction_id[group.entries.first.transaction.id]
-      category = categories_by_name[categorization&.category_name]
+      category = categories_by_name[categorization&.category_name.to_s.downcase]
 
       if category.present? && Rule.create_from_grouping(family, group.grouping_key, category, transaction_type: group.transaction_type)
         created_count += 1

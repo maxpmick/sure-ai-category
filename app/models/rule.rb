@@ -123,7 +123,16 @@ class Rule < ApplicationRecord
 
   private
     def self.grouping_rule_exists?(family, grouping_key, category, transaction_type: nil)
-      family.rules.includes(:conditions, :actions).any? do |rule|
+      family.rules
+        .joins(:actions, :conditions)
+        .where(
+          resource_type: "transaction",
+          rule_actions: { action_type: "set_transaction_category", value: category.id.to_s },
+          rule_conditions: { condition_type: "transaction_name", operator: "like", value: grouping_key }
+        )
+        .distinct
+        .includes(:conditions, :actions)
+        .any? do |rule|
         next false unless rule.resource_type == "transaction"
         next false unless rule.actions.one?
         next false unless rule.actions.first.action_type == "set_transaction_category"

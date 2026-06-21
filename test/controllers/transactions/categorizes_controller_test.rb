@@ -175,7 +175,10 @@ class Transactions::CategorizesControllerTest < ActionDispatch::IntegrationTest
     post auto_create_rules_transactions_categorize_url
 
     assert_redirected_to transactions_url
-    assert_match "configured", flash[:alert]
+    assert_equal I18n.t(
+      "transactions.categorizes.auto_create_rules.failed",
+      error: I18n.t("transactions.categorizes.auto_create_rules.errors.no_provider")
+    ), flash[:alert]
   end
 
   private
