@@ -5,7 +5,7 @@ class Family::AutoCategoryRuleCreator
   end
 
   def create_rules
-    return failure("No LLM provider configured") unless llm_provider
+    return failure("No AI provider is configured for rule creation") unless llm_provider
 
     grouped_entries = uncategorized_groups
     return success if grouped_entries.empty?
@@ -16,7 +16,7 @@ class Family::AutoCategoryRuleCreator
       family: family
     )
 
-    return failure(result.error&.message || "Failed to auto-categorize transaction groups") unless result.success?
+    return failure(result.error&.message || "The configured AI provider could not categorize your uncategorized transaction groups") unless result.success?
 
     categories_by_name = family.categories.index_by(&:name)
     categorizations_by_transaction_id = result.data.index_by(&:transaction_id)

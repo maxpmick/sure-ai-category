@@ -15,7 +15,7 @@
             <% menu.with_item(variant: "link", text: t(".categorize_button", count: @uncategorized_count), href: transactions_categorize_path, icon: "tag", data: { turbo_frame: :_top }) %>
             <% if @auto_rule_creation_enabled %>
               <% menu.with_item(
-                variant: "link",
+                variant: "button",
                 text: t(".auto_create_rules"),
                 href: auto_create_rules_transactions_categorize_path,
                 icon: "sparkles",
